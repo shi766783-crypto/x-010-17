@@ -27,3 +27,6 @@ export function createStorage(namespace) {
 }
 
 export const planStorage = createStorage('plans')
+
+// 置顶计划 id 列表，独立于计划数据单独保存
+export const pinnedPlanStorage = createStorage('pinned-plans')

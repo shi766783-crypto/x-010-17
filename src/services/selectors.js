@@ -48,3 +48,17 @@ export function planTodosAllDone(plan) {
   const todos = plan.todos || []
   return todos.length > 0 && todos.every((t) => t.done)
 }
+
+// 置顶优先排序：置顶项始终排在最前，与既有排序条件并存。
+// 入参视为已按正常排序排好的列表，使用稳定分区将置顶项整体前移，
+// 两组内部顺序保持不变，因此取消置顶后会回到正常排序位置。
+export function withPinnedFirst(plans, pinnedIds) {
+  const pinned = new Set(pinnedIds || [])
+  const pinnedPlans = []
+  const normalPlans = []
+  for (const plan of plans) {
+    if (pinned.has(plan.id)) pinnedPlans.push(plan)
+    else normalPlans.push(plan)
+  }
+  return [...pinnedPlans, ...normalPlans]
+}

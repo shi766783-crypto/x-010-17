@@ -25,11 +25,18 @@ function onDelete(plan) {
       <button class="btn btn-primary" @click="router.push('/plans/new')">+ 新建出行计划</button>
     </div>
 
-    <div v-if="store.plans.length" class="plan-grid">
-      <div v-for="plan in store.plans" :key="plan.id" class="plan-card" @click="router.push(`/plans/${plan.id}`)">
+    <div v-if="store.sortedPlans.length" class="plan-grid">
+      <div
+        v-for="plan in store.sortedPlans"
+        :key="plan.id"
+        class="plan-card"
+        :class="{ 'plan-card-pinned': store.isPinned(plan.id) }"
+        @click="router.push(`/plans/${plan.id}`)"
+      >
         <div class="plan-cover">
           <img v-if="plan.photo" :src="plan.photo" alt="目的地照片" />
           <div v-else class="plan-cover-placeholder">{{ plan.destination.slice(0, 1) }}</div>
+          <span v-if="store.isPinned(plan.id)" class="pin-badge">📌 置顶</span>
         </div>
         <div class="plan-body">
           <div class="flex-between">
@@ -60,6 +67,9 @@ function onDelete(plan) {
         <div class="plan-actions" @click.stop>
           <button class="btn btn-ghost btn-sm" @click="router.push(`/plans/${plan.id}`)">详情</button>
           <button class="btn btn-ghost btn-sm" @click="router.push(`/plans/${plan.id}/edit`)">编辑</button>
+          <button class="btn btn-ghost btn-sm" @click="store.togglePin(plan.id)">
+            {{ store.isPinned(plan.id) ? '取消置顶' : '置顶' }}
+          </button>
           <button class="btn btn-danger btn-sm" @click="onDelete(plan)">删除</button>
         </div>
       </div>
@@ -91,14 +101,35 @@ function onDelete(plan) {
   flex-direction: column;
 }
 
+.plan-card-pinned {
+  box-shadow: 0 0 0 2px var(--primary), var(--shadow);
+}
+
 .plan-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
 
+.plan-card-pinned:hover {
+  box-shadow: 0 0 0 2px var(--primary), var(--shadow-md);
+}
+
 .plan-cover {
+  position: relative;
   height: 140px;
   background: linear-gradient(135deg, #4f6ef7, #7c5cf0);
+}
+
+.pin-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(30, 36, 51, 0.72);
 }
 
 .plan-cover img {

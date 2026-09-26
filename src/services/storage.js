@@ -27,3 +27,5 @@ export function createStorage(namespace) {
 }
 
 export const planStorage = createStorage('plans')
+// 置顶标记独立存储：只保存计划 id 列表，与计划数据分离
+export const pinStorage = createStorage('pinned-plans')

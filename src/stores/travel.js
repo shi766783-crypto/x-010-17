@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { planStorage } from '../services/storage'
+import { planStorage, pinStorage } from '../services/storage'
 import { generateLuggageTemplate, getDestinationType } from '../services/luggage'
 import { generateDefaultTodos } from '../services/todo'
 import { computeAchievements, TOTAL_ACHIEVEMENTS } from '../services/achievements'
@@ -17,6 +17,8 @@ function buildMemberNames(input) {
 export const useTravelStore = defineStore('travel', {
   state: () => ({
     plans: [],
+    // 置顶的计划 id 列表，越靠前越先展示；与 plans 分离持久化
+    pinnedPlanIds: [],
   }),
 
   getters: {
@@ -25,15 +27,29 @@ export const useTravelStore = defineStore('travel', {
     dashboardStats: (state) => computeDashboardStats(state.plans),
     leaderboard: (state) => computeMemberLeaderboard(state.plans),
     planById: (state) => (id) => state.plans.find((p) => p.id === id),
+    isPinned: (state) => (id) => state.pinnedPlanIds.includes(id),
+    // 列表展示顺序：置顶计划优先，其余保持原有排序
+    sortedPlans: (state) => {
+      const pinned = state.pinnedPlanIds
+        .map((id) => state.plans.find((p) => p.id === id))
+        .filter(Boolean)
+      const rest = state.plans.filter((p) => !state.pinnedPlanIds.includes(p.id))
+      return [...pinned, ...rest]
+    },
   },
 
   actions: {
     // ===== 持久化 =====
     load() {
       this.plans = planStorage.read([])
+      const pinned = pinStorage.read([])
+      // 加载时剔除已不存在的计划 id，避免置顶标记残留
+      const planIds = new Set(this.plans.map((p) => p.id))
+      this.pinnedPlanIds = Array.isArray(pinned) ? pinned.filter((id) => planIds.has(id)) : []
     },
     persist() {
       planStorage.write(this.plans)
+      pinStorage.write(this.pinnedPlanIds)
     },
 
     // ===== 出行计划 =====
@@ -95,6 +111,19 @@ export const useTravelStore = defineStore('travel', {
 
     deletePlan(id) {
       this.plans = this.plans.filter((p) => p.id !== id)
+      // 删除计划时一并清理其置顶标记
+      this.pinnedPlanIds = this.pinnedPlanIds.filter((pid) => pid !== id)
+    },
+
+    // ===== 置顶 =====
+    togglePin(id) {
+      if (this.pinnedPlanIds.includes(id)) {
+        // 取消置顶：回到正常排序位置
+        this.pinnedPlanIds = this.pinnedPlanIds.filter((pid) => pid !== id)
+      } else if (this.planById(id)) {
+        // 新置顶的计划排在置顶组最前
+        this.pinnedPlanIds.unshift(id)
+      }
     },
 
     // ===== 行李清单 =====

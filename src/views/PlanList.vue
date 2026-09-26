@@ -26,7 +26,13 @@ function onDelete(plan) {
     </div>
 
     <div v-if="store.plans.length" class="plan-grid">
-      <div v-for="plan in store.plans" :key="plan.id" class="plan-card" @click="router.push(`/plans/${plan.id}`)">
+      <div
+        v-for="plan in store.sortedPlans"
+        :key="plan.id"
+        class="plan-card"
+        :class="{ pinned: store.isPinned(plan.id) }"
+        @click="router.push(`/plans/${plan.id}`)"
+      >
         <div class="plan-cover">
           <img v-if="plan.photo" :src="plan.photo" alt="目的地照片" />
           <div v-else class="plan-cover-placeholder">{{ plan.destination.slice(0, 1) }}</div>
@@ -34,7 +40,10 @@ function onDelete(plan) {
         <div class="plan-body">
           <div class="flex-between">
             <h3 class="plan-name">{{ plan.name }}</h3>
-            <span class="tag" :class="tripTypeClass(plan.tripType)">{{ plan.tripType }}</span>
+            <div class="flex gap-8">
+              <span v-if="store.isPinned(plan.id)" class="tag tag-orange">置顶</span>
+              <span class="tag" :class="tripTypeClass(plan.tripType)">{{ plan.tripType }}</span>
+            </div>
           </div>
           <p class="plan-dest text-secondary">{{ plan.destination }} · {{ plan.destinationType }}</p>
           <p class="plan-date text-muted">
@@ -58,6 +67,9 @@ function onDelete(plan) {
           </div>
         </div>
         <div class="plan-actions" @click.stop>
+          <button class="btn btn-ghost btn-sm" @click="store.togglePin(plan.id)">
+            {{ store.isPinned(plan.id) ? '取消置顶' : '置顶' }}
+          </button>
           <button class="btn btn-ghost btn-sm" @click="router.push(`/plans/${plan.id}`)">详情</button>
           <button class="btn btn-ghost btn-sm" @click="router.push(`/plans/${plan.id}/edit`)">编辑</button>
           <button class="btn btn-danger btn-sm" @click="onDelete(plan)">删除</button>
@@ -94,6 +106,10 @@ function onDelete(plan) {
 .plan-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+}
+
+.plan-card.pinned {
+  outline: 2px solid var(--primary-light);
 }
 
 .plan-cover {
